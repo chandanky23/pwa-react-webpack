@@ -15,7 +15,7 @@ const Routes = () => {
       <Route path="/about">
         <About />
       </Route>
-      <Route path="/conact">
+      <Route path="/contact">
         <Contact />
       </Route>
       <Route path="/experiences">

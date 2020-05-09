@@ -7,6 +7,17 @@ const assets = [
   "https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css",
 ]
 
+// Limit size of cache
+const limitCacheSize = (name, size) => {
+  caches.open(name).then((cache) => {
+    cache.keys().then((keys) => {
+      if (keys.length > size) {
+        cache.delete(keys[0]).then(limitCacheSize(name, size))
+      }
+    })
+  })
+}
+
 // install event
 self.addEventListener("install", (event) => {
   console.log("Service worker installed")
@@ -37,13 +48,23 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   console.log("fetch event: ", event)
   event.respondWith(
-    caches.match(event.request).then((cacheResponse) => {
-      return cacheResponse || fetch(event.request).then(fetchRes => {
-        return caches.open(dynamicCacheName).then(cache => {
-          cache.put(event.request.url, fetchRes.clone());
-          return fetchRes;
-        })
+    caches
+      .match(event.request)
+      .then((cacheResponse) => {
+        return (
+          cacheResponse ||
+          fetch(event.request).then((fetchRes) => {
+            return caches.open(dynamicCacheName).then((cache) => {
+              cache.put(event.request.url, fetchRes.clone());
+              limitCacheSize(dynamicCacheName, 10);
+              return fetchRes
+            })
+          })
+        )
       })
-    })
+      .catch(() => {
+        // Add the assets you want to show incase the cache or network request doesn't exist.
+        // eg: fallback error index.html
+      })
   )
 })
